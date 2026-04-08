@@ -12,7 +12,14 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }))
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://pulse-web-bice.vercel.app',
+    'https://www.pulse-journaling.com',
+    'https://pulse-journaling.com'
+  ]
+}))
 app.use(express.json())
 
 const requireAuth = async (req, res, next) => {
