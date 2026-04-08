@@ -35,7 +35,7 @@ function Nav({ page, setPage }) {
             onClick={() => setPage(p === 'journal' ? 'home' : p)}
           >{p}</button>
         ))}
-        <div style={{ marginLeft: 'auto', paddingBottom: '12px' }}>
+        <div style={{ marginLeft: isMobile ? '0' : 'auto', paddingBottom: '12px', flexShrink: 0 }}>
           <UserButton afterSignOutUrl="/" />
         </div>
       </div>
@@ -764,9 +764,9 @@ function App() {
 
 const styles = {
   container: { backgroundColor: '#0f0f0f', minHeight: '100vh', fontFamily: 'Georgia, serif', color: '#f0f0f0', width: '100%', boxSizing: 'border-box' },
-  nav: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '24px 16px 0px 16px' : '32px 40px 0px 40px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, backgroundColor: '#0f0f0f', zIndex: 10 },
+  nav: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '24px 16px 0px 16px' : '32px 40px 0px 40px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, backgroundColor: '#0f0f0f', zIndex: 10, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
   logo: { fontSize: '28px', fontWeight: '400', letterSpacing: '8px', color: '#a78bfa', margin: '0 0 20px 0' },
-  navLinks: { display: 'flex', gap: isMobile ? '16px' : '40px', marginBottom: '0px', alignItems: 'center' },
+  navLinks: { display: 'flex', gap: isMobile ? '12px' : '40px', marginBottom: '0px', alignItems: 'center', width: '100%', justifyContent: isMobile ? 'space-between' : 'center' },
   navLink: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#555', fontSize: '12px', cursor: 'pointer', letterSpacing: '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
   navLinkActive: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid #a78bfa', color: '#a78bfa', fontSize: isMobile ? '10px' : '12px', cursor: 'pointer', letterSpacing: isMobile ? '1px' : '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
   page: { padding: '40px', maxWidth: '800px', margin: '0 auto' },
