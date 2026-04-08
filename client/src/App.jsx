@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth, UserButton, SignedOut, SignInButton } from '@clerk/clerk-react'
 import api from './api'
 
+const isMobile = window.innerWidth < 768
+
 const STEPS = [
   { question: 'how are you feeling right now?' },
   { question: 'what triggered this feeling?' },
@@ -762,11 +764,11 @@ function App() {
 
 const styles = {
   container: { backgroundColor: '#0f0f0f', minHeight: '100vh', fontFamily: 'Georgia, serif', color: '#f0f0f0', width: '100%', boxSizing: 'border-box' },
-  nav: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 40px 0px 40px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, backgroundColor: '#0f0f0f', zIndex: 10 },
+  nav: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '24px 16px 0px 16px' : '32px 40px 0px 40px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, backgroundColor: '#0f0f0f', zIndex: 10 },
   logo: { fontSize: '28px', fontWeight: '400', letterSpacing: '8px', color: '#a78bfa', margin: '0 0 20px 0' },
-  navLinks: { display: 'flex', gap: '40px', marginBottom: '0px', alignItems: 'center' },
+  navLinks: { display: 'flex', gap: isMobile ? '16px' : '40px', marginBottom: '0px', alignItems: 'center' },
   navLink: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#555', fontSize: '12px', cursor: 'pointer', letterSpacing: '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
-  navLinkActive: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid #a78bfa', color: '#a78bfa', fontSize: '12px', cursor: 'pointer', letterSpacing: '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
+  navLinkActive: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid #a78bfa', color: '#a78bfa', fontSize: isMobile ? '10px' : '12px', cursor: 'pointer', letterSpacing: isMobile ? '1px' : '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
   page: { padding: '40px', maxWidth: '800px', margin: '0 auto' },
   toast: { position: 'fixed', bottom: '32px', right: '32px', backgroundColor: '#a78bfa', color: '#0f0f0f', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', letterSpacing: '2px' },
   wizardWrapper: { backgroundColor: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '12px', padding: '36px', maxWidth: '600px', margin: '0 auto' },
