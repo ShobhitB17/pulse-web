@@ -7,14 +7,14 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^4.x.x",
-    "@clerk/clerk-sdk-node": "^4.x.x",
-    "cors": "^2.x.x",
-    "dotenv": "^16.x.x",
-    "express": "^4.x.x",
-    "pg": "^8.x.x"
+    "@anthropic-ai/sdk": "^0.85.0",
+    "@clerk/clerk-sdk-node": "^4.13.23",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.x.x"
+    "nodemon": "^3.1.14"
   }
 }
