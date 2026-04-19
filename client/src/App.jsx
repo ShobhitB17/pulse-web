@@ -148,6 +148,41 @@ function FreeWriteMode({ getToken, onSaved }) {
   const [text, setText] = useState('')
   const [showMood, setShowMood] = useState(false)
   const [mood, setMood] = useState(null)
+  const [listening, setListening] = useState(false)
+  const recognitionRef = useState(null)
+
+  const isSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+
+    recognition.onresult = (event) => {
+      let final = ''
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript + ' '
+      }
+      if (final) setText(prev => (prev.trim() ? prev.trimEnd() + ' ' + final : final))
+    }
+
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+
+    recognitionRef[0] = recognition
+    recognition.start()
+    setListening(true)
+  }
+
+  const stopListening = () => {
+    if (recognitionRef[0]) {
+      recognitionRef[0].stop()
+      recognitionRef[0] = null
+    }
+    setListening(false)
+  }
 
   const handleSaveWithMood = async (finalMood) => {
     const token = await getToken()
@@ -155,25 +190,43 @@ function FreeWriteMode({ getToken, onSaved }) {
     setText('')
     setMood(null)
     setShowMood(false)
+    stopListening()
     onSaved()
   }
 
   const handlePressSave = () => {
     if (text.trim() === '') return
+    stopListening()
     setShowMood(true)
   }
 
   return (
     <div style={styles.wizardWrapper}>
       <p style={styles.question}>what's on your mind?</p>
-      <textarea
-        autoFocus
-        style={{ ...styles.textarea, minHeight: 180 }}
-        placeholder="just write. no structure, no prompts. get it all out..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={7}
-      />
+
+      <div style={{ position: 'relative' }}>
+        <textarea
+          autoFocus
+          style={{ ...styles.textarea, minHeight: 180, paddingBottom: 48 }}
+          placeholder="just write. no structure, no prompts. get it all out..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={7}
+        />
+        {isSupported && (
+          <button
+            style={styles.micButton}
+            onClick={listening ? stopListening : startListening}
+            title={listening ? 'stop recording' : 'speak your thoughts'}
+          >
+            {listening ? '⏹ stop' : '🎙 speak'}
+          </button>
+        )}
+      </div>
+
+      {listening && (
+        <p style={{ fontSize: 12, color: '#a78bfa', letterSpacing: 2, marginTop: 10 }}>listening...</p>
+      )}
 
       {!showMood && (
         <div style={styles.wizardActions}>
@@ -881,6 +934,7 @@ const styles = {
   wizardActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' },
   backButton: { backgroundColor: 'transparent', color: '#555', border: '1px solid #2e2e2e', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif' },
   skipButton: { backgroundColor: 'transparent', color: '#555', border: 'none', fontSize: '13px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif', padding: '10px 8px' },
+  micButton: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'transparent', border: '1px solid #2e2e2e', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer', letterSpacing: '1px', fontFamily: 'Georgia, serif', padding: '6px 12px' },
   button: { backgroundColor: '#a78bfa', color: '#0f0f0f', border: 'none', borderRadius: '8px', padding: '10px 28px', fontSize: '14px', cursor: 'pointer', letterSpacing: '2px' },
   entriesHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' },
   entryCount: { fontSize: '12px', letterSpacing: '3px', color: '#555', textTransform: 'uppercase', margin: 0 },
