@@ -43,23 +43,15 @@ function Nav({ page, setPage }) {
   )
 }
 
-function HomePage({ getToken }) {
+function CheckInMode({ getToken, onSaved }) {
   const [step, setStep] = useState(0)
   const [feeling, setFeeling] = useState('')
   const [trigger, setTrigger] = useState('')
   const [mood, setMood] = useState(null)
-  const [saved, setSaved] = useState(false)
 
   const handleNext = () => {
     if (step === 0 && feeling.trim() === '') return
     setStep(step + 1)
-  }
-
-  const handleSkip = () => {
-    if (step === 1) setTrigger(null)
-    if (step === 2) setMood(null)
-    setStep(step + 1 <= 2 ? step + 1 : step)
-    if (step === 2) handleSaveWith(trigger === null ? null : trigger, null)
   }
 
   const handleKeyDown = (e) => {
@@ -71,17 +63,12 @@ function HomePage({ getToken }) {
 
   const handleSaveWith = async (finalTrigger, finalMood) => {
     const token = await getToken()
-    await api.saveEntry(token, {
-      text: feeling,
-      trigger: finalTrigger,
-      mood: finalMood
-    })
+    await api.saveEntry(token, { text: feeling, trigger: finalTrigger, mood: finalMood })
     setFeeling('')
     setTrigger('')
     setMood(null)
     setStep(0)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    onSaved()
   }
 
   const handleSave = async () => {
@@ -96,44 +83,107 @@ function HomePage({ getToken }) {
   const progress = ((step + 1) / STEPS.length) * 100
 
   return (
-    <div style={styles.page}>
-      {saved && <div style={styles.toast}>entry saved</div>}
-      <div style={styles.wizardWrapper}>
-        <div style={styles.progressBarTrack}>
-          <div style={{ ...styles.progressBarFill, width: `${progress}%` }} />
+    <div style={styles.wizardWrapper}>
+      <div style={styles.progressBarTrack}>
+        <div style={{ ...styles.progressBarFill, width: `${progress}%` }} />
+      </div>
+      <p style={styles.stepIndicator}>step {step + 1} of {STEPS.length}</p>
+      <p style={styles.question}>{STEPS[step].question}</p>
+
+      {step === 0 && (
+        <>
+          <textarea autoFocus style={styles.textarea} placeholder="write freely..."
+            value={feeling} onChange={(e) => setFeeling(e.target.value)}
+            onKeyDown={handleKeyDown} rows={3} />
+          <div style={styles.suggestions}>
+            {FEELING_SUGGESTIONS.map(s => (
+              <button key={s} style={styles.chip}
+                onClick={() => appendSuggestion(setFeeling, feeling, s)}>{s}</button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {step === 1 && (
+        <>
+          <textarea autoFocus style={styles.textarea} placeholder="a person, situation, thought..."
+            value={trigger || ''} onChange={(e) => setTrigger(e.target.value)}
+            onKeyDown={handleKeyDown} rows={3} />
+          <div style={styles.suggestions}>
+            {TRIGGER_SUGGESTIONS.map(s => (
+              <button key={s} style={styles.chip}
+                onClick={() => appendSuggestion(setTrigger, trigger, s)}>{s}</button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {step === 2 && (
+        <div style={styles.sliderWrapper}>
+          <div style={styles.moodScore}>{mood !== null ? mood : 5}</div>
+          <input type="range" min={1} max={10} value={mood !== null ? mood : 5}
+            onChange={(e) => setMood(Number(e.target.value))} style={styles.slider} />
+          <div style={styles.sliderLabels}>
+            <span>very low</span><span>very high</span>
+          </div>
         </div>
-        <p style={styles.stepIndicator}>step {step + 1} of {STEPS.length}</p>
-        <p style={styles.question}>{STEPS[step].question}</p>
+      )}
 
-        {step === 0 && (
-          <>
-            <textarea autoFocus style={styles.textarea} placeholder="write freely..."
-              value={feeling} onChange={(e) => setFeeling(e.target.value)}
-              onKeyDown={handleKeyDown} rows={3} />
-            <div style={styles.suggestions}>
-              {FEELING_SUGGESTIONS.map(s => (
-                <button key={s} style={styles.chip}
-                  onClick={() => appendSuggestion(setFeeling, feeling, s)}>{s}</button>
-              ))}
-            </div>
-          </>
-        )}
-
+      <div style={styles.wizardActions}>
+        {step > 0 && <button style={styles.backButton} onClick={() => setStep(step - 1)}>back</button>}
         {step === 1 && (
-          <>
-            <textarea autoFocus style={styles.textarea} placeholder="a person, situation, thought..."
-              value={trigger || ''} onChange={(e) => setTrigger(e.target.value)}
-              onKeyDown={handleKeyDown} rows={3} />
-            <div style={styles.suggestions}>
-              {TRIGGER_SUGGESTIONS.map(s => (
-                <button key={s} style={styles.chip}
-                  onClick={() => appendSuggestion(setTrigger, trigger, s)}>{s}</button>
-              ))}
-            </div>
-          </>
+          <button style={styles.skipButton} onClick={() => { setTrigger(null); setStep(2) }}>skip</button>
         )}
-
         {step === 2 && (
+          <button style={styles.skipButton} onClick={() => handleSaveWith(trigger || null, null)}>skip</button>
+        )}
+        {step < 2 && <button style={styles.button} onClick={handleNext}>next</button>}
+        {step === 2 && <button style={styles.button} onClick={handleSave}>save</button>}
+      </div>
+    </div>
+  )
+}
+
+function FreeWriteMode({ getToken, onSaved }) {
+  const [text, setText] = useState('')
+  const [showMood, setShowMood] = useState(false)
+  const [mood, setMood] = useState(null)
+
+  const handleSaveWithMood = async (finalMood) => {
+    const token = await getToken()
+    await api.saveEntry(token, { text, trigger: null, mood: finalMood })
+    setText('')
+    setMood(null)
+    setShowMood(false)
+    onSaved()
+  }
+
+  const handlePressSave = () => {
+    if (text.trim() === '') return
+    setShowMood(true)
+  }
+
+  return (
+    <div style={styles.wizardWrapper}>
+      <p style={styles.question}>what's on your mind?</p>
+      <textarea
+        autoFocus
+        style={{ ...styles.textarea, minHeight: 180 }}
+        placeholder="just write. no structure, no prompts. get it all out..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={7}
+      />
+
+      {!showMood && (
+        <div style={styles.wizardActions}>
+          <button style={styles.button} onClick={handlePressSave}>save</button>
+        </div>
+      )}
+
+      {showMood && (
+        <div style={{ marginTop: 28 }}>
+          <p style={{ ...styles.stepIndicator, marginBottom: 16 }}>how would you rate your mood right now?</p>
           <div style={styles.sliderWrapper}>
             <div style={styles.moodScore}>{mood !== null ? mood : 5}</div>
             <input type="range" min={1} max={10} value={mood !== null ? mood : 5}
@@ -142,24 +192,44 @@ function HomePage({ getToken }) {
               <span>very low</span><span>very high</span>
             </div>
           </div>
-        )}
+          <div style={styles.wizardActions}>
+            <button style={styles.skipButton} onClick={() => handleSaveWithMood(null)}>skip</button>
+            <button style={styles.button} onClick={() => handleSaveWithMood(mood !== null ? mood : 5)}>save</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
-        <div style={styles.wizardActions}>
-          {step > 0 && <button style={styles.backButton} onClick={() => setStep(step - 1)}>back</button>}
-          {step === 1 && (
-            <button style={styles.skipButton} onClick={() => {
-              setTrigger(null)
-              setStep(2)
-            }}>skip</button>
-          )}
-          {step === 2 && (
-            <button style={styles.skipButton} onClick={() => handleSaveWith(trigger || null, null)}>skip</button>
-          )}
-          {step < 2 && step !== 1 && <button style={styles.button} onClick={handleNext}>next</button>}
-          {step === 1 && <button style={styles.button} onClick={handleNext}>next</button>}
-          {step === 2 && <button style={styles.button} onClick={handleSave}>save</button>}
+function HomePage({ getToken }) {
+  const [mode, setMode] = useState('checkin')
+  const [saved, setSaved] = useState(false)
+
+  const handleSaved = () => {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  return (
+    <div style={styles.page}>
+      {saved && <div style={styles.toast}>entry saved</div>}
+
+      <div style={{ maxWidth: 600, margin: '0 auto 24px' }}>
+        <div style={styles.modeTabBar}>
+          <button
+            style={mode === 'checkin' ? styles.modeTabActive : styles.modeTab}
+            onClick={() => setMode('checkin')}
+          >check in</button>
+          <button
+            style={mode === 'freewrite' ? styles.modeTabActive : styles.modeTab}
+            onClick={() => setMode('freewrite')}
+          >free write</button>
         </div>
       </div>
+
+      {mode === 'checkin' && <CheckInMode getToken={getToken} onSaved={handleSaved} />}
+      {mode === 'freewrite' && <FreeWriteMode getToken={getToken} onSaved={handleSaved} />}
     </div>
   )
 }
@@ -795,6 +865,9 @@ const styles = {
   navLinkActive: { backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid #a78bfa', color: '#a78bfa', fontSize: isMobile ? '10px' : '12px', cursor: 'pointer', letterSpacing: isMobile ? '1px' : '3px', fontFamily: 'Georgia, serif', paddingBottom: '12px', textTransform: 'uppercase' },
   page: { padding: isMobile ? '24px 16px' : '40px', maxWidth: '800px', margin: '0 auto', width: '100%', boxSizing: 'border-box' },
   toast: { position: 'fixed', bottom: '32px', right: '32px', backgroundColor: '#a78bfa', color: '#0f0f0f', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', letterSpacing: '2px' },
+  modeTabBar: { display: 'flex', backgroundColor: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '10px', padding: '4px', gap: '4px' },
+  modeTab: { flex: 1, backgroundColor: 'transparent', border: 'none', borderRadius: '7px', color: '#555', fontSize: '13px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif', padding: '10px 0', textTransform: 'lowercase' },
+  modeTabActive: { flex: 1, backgroundColor: '#2e2e2e', border: 'none', borderRadius: '7px', color: '#f0f0f0', fontSize: '13px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif', padding: '10px 0', textTransform: 'lowercase' },
   wizardWrapper: { backgroundColor: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '12px', padding: '36px', maxWidth: '600px', margin: '0 auto' },
   progressBarTrack: { backgroundColor: '#2e2e2e', borderRadius: '999px', height: '3px', marginBottom: '24px' },
   progressBarFill: { backgroundColor: '#a78bfa', height: '3px', borderRadius: '999px', transition: 'width 0.3s ease' },
@@ -862,7 +935,7 @@ const styles = {
   aboutSteps: { display: 'flex', flexDirection: 'column', gap: '24px' },
   aboutStep: { display: 'flex', flexDirection: 'column', gap: '4px' },
   aboutStepNumber: { fontSize: '11px', letterSpacing: '3px', color: '#a78bfa', marginBottom: '4px' },
-  aboutStepTitle: { fontSize: '15px', color: '#f0f0f0', marginBottom: '4px' },
+  aboutStepTitle: { fontSize: '15px', ccolor: '#f0f0f0', marginBottom: '4px' },
   aboutStepBody: { fontSize: '14px', lineHeight: '1.7', color: '#777' },
   aboutVersion: { fontSize: '11px', letterSpacing: '3px', color: '#333', textTransform: 'uppercase', marginTop: '8px' },
 }
