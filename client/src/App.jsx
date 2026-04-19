@@ -47,13 +47,19 @@ function HomePage({ getToken }) {
   const [step, setStep] = useState(0)
   const [feeling, setFeeling] = useState('')
   const [trigger, setTrigger] = useState('')
-  const [mood, setMood] = useState(5)
+  const [mood, setMood] = useState(null)
   const [saved, setSaved] = useState(false)
 
   const handleNext = () => {
     if (step === 0 && feeling.trim() === '') return
-    if (step === 1 && trigger.trim() === '') return
     setStep(step + 1)
+  }
+
+  const handleSkip = () => {
+    if (step === 1) setTrigger(null)
+    if (step === 2) setMood(null)
+    setStep(step + 1 <= 2 ? step + 1 : step)
+    if (step === 2) handleSaveWith(trigger === null ? null : trigger, null)
   }
 
   const handleKeyDown = (e) => {
@@ -63,19 +69,27 @@ function HomePage({ getToken }) {
     }
   }
 
-  const handleSave = async () => {
+  const handleSaveWith = async (finalTrigger, finalMood) => {
     const token = await getToken()
-    await api.saveEntry(token, { text: feeling, trigger, mood })
+    await api.saveEntry(token, {
+      text: feeling,
+      trigger: finalTrigger,
+      mood: finalMood
+    })
     setFeeling('')
     setTrigger('')
-    setMood(5)
+    setMood(null)
     setStep(0)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const handleSave = async () => {
+    await handleSaveWith(trigger || null, mood)
+  }
+
   const appendSuggestion = (setter, current, suggestion) => {
-    const trimmed = current.trim()
+    const trimmed = (current || '').trim()
     setter(trimmed ? trimmed + ', ' + suggestion : suggestion)
   }
 
@@ -108,7 +122,7 @@ function HomePage({ getToken }) {
         {step === 1 && (
           <>
             <textarea autoFocus style={styles.textarea} placeholder="a person, situation, thought..."
-              value={trigger} onChange={(e) => setTrigger(e.target.value)}
+              value={trigger || ''} onChange={(e) => setTrigger(e.target.value)}
               onKeyDown={handleKeyDown} rows={3} />
             <div style={styles.suggestions}>
               {TRIGGER_SUGGESTIONS.map(s => (
@@ -121,8 +135,8 @@ function HomePage({ getToken }) {
 
         {step === 2 && (
           <div style={styles.sliderWrapper}>
-            <div style={styles.moodScore}>{mood}</div>
-            <input type="range" min={1} max={10} value={mood}
+            <div style={styles.moodScore}>{mood !== null ? mood : 5}</div>
+            <input type="range" min={1} max={10} value={mood !== null ? mood : 5}
               onChange={(e) => setMood(Number(e.target.value))} style={styles.slider} />
             <div style={styles.sliderLabels}>
               <span>very low</span><span>very high</span>
@@ -132,7 +146,17 @@ function HomePage({ getToken }) {
 
         <div style={styles.wizardActions}>
           {step > 0 && <button style={styles.backButton} onClick={() => setStep(step - 1)}>back</button>}
-          {step < 2 && <button style={styles.button} onClick={handleNext}>next</button>}
+          {step === 1 && (
+            <button style={styles.skipButton} onClick={() => {
+              setTrigger(null)
+              setStep(2)
+            }}>skip</button>
+          )}
+          {step === 2 && (
+            <button style={styles.skipButton} onClick={() => handleSaveWith(trigger || null, null)}>skip</button>
+          )}
+          {step < 2 && step !== 1 && <button style={styles.button} onClick={handleNext}>next</button>}
+          {step === 1 && <button style={styles.button} onClick={handleNext}>next</button>}
           {step === 2 && <button style={styles.button} onClick={handleSave}>save</button>}
         </div>
       </div>
@@ -783,6 +807,7 @@ const styles = {
   sliderLabels: { display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '11px', color: '#555', letterSpacing: '1px' },
   wizardActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' },
   backButton: { backgroundColor: 'transparent', color: '#555', border: '1px solid #2e2e2e', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif' },
+  skipButton: { backgroundColor: 'transparent', color: '#555', border: 'none', fontSize: '13px', cursor: 'pointer', letterSpacing: '2px', fontFamily: 'Georgia, serif', padding: '10px 8px' },
   button: { backgroundColor: '#a78bfa', color: '#0f0f0f', border: 'none', borderRadius: '8px', padding: '10px 28px', fontSize: '14px', cursor: 'pointer', letterSpacing: '2px' },
   entriesHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' },
   entryCount: { fontSize: '12px', letterSpacing: '3px', color: '#555', textTransform: 'uppercase', margin: 0 },
