@@ -858,8 +858,9 @@ function AboutPage() {
           ))}
         </div>
         <div style={styles.aboutDivider} />
-        <h2 style={styles.aboutHeading}>your data</h2>
-        <p style={styles.aboutBody}>Everything you write in Pulse is stored securely in your private account. Only you can access your entries. You can export all your entries at any time as a CSV or PDF from the entries page.</p>
+        <h2 style={styles.aboutHeading}>about the maker</h2>
+        <p style={styles.aboutBody}>Pulse was built by Shobhit Brijesh, a mechanical engineer trying to empower people to capture their emotional pulse.</p>
+        <p style={styles.aboutBody}>Have feedback, ideas, or just want to say hello? Reach out at <span style={{ color: '#a78bfa' }}>shobhit.brijesh123@gmail.com</span></p>
         <div style={styles.aboutDivider} />
         <p style={styles.aboutVersion}>pulse v2.0 · built with intention</p>
       </div>
